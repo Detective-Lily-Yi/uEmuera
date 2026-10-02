@@ -5,8 +5,20 @@ using UnityEngine.UI;
 
 public class OptionWindow : MonoBehaviour
 {
-	// Use this for initialization
-	void Start ()
+    [SerializeField] private ContentScale contentScale;
+
+    [SerializeField] private GameObject customResolutionPad;
+    
+    [SerializeField] private CustomResolution customResolution;
+
+    [SerializeField] private GameObject menu_1_TargetFrameRate;
+    
+    [SerializeField] private GameObject menu_2_TargetFrameRate;
+
+    [SerializeField] private CustomTargetFrameRate customTargetFrameRate;
+    
+    // Use this for initialization
+    void Start()
     {
         GenericUtils.SetListenerOnClick(quick_button.gameObject, OnQuickButtonClick);
         GenericUtils.SetListenerOnClick(input_button.gameObject, OnInputPadButtonClick);
@@ -24,6 +36,8 @@ public class OptionWindow : MonoBehaviour
         GenericUtils.SetListenerOnClick(menu_1_language, ShowLanguageBox);
         GenericUtils.SetListenerOnClick(menu_1_github, OnGithub);
         GenericUtils.SetListenerOnClick(menu_1_exit, OnMenuExit);
+        
+        GenericUtils.SetListenerOnClick(menu_1_TargetFrameRate, () => customTargetFrameRate.gameObject.SetActive(true));
 
         GenericUtils.SetListenerOnClick(menu_2_back, OnMenu2Back);
         GenericUtils.SetListenerOnClick(menu_2_restart, OnMenu2Restart);
@@ -31,6 +45,8 @@ public class OptionWindow : MonoBehaviour
         GenericUtils.SetListenerOnClick(menu_2_savelog, OnMenuSaveLog);
         GenericUtils.SetListenerOnClick(menu_2_intent, OnIntentBoxShow);
         GenericUtils.SetListenerOnClick(menu_2_exit, OnMenuExit);
+        
+        GenericUtils.SetListenerOnClick(menu_2_TargetFrameRate, () => customTargetFrameRate.gameObject.SetActive(true));
 
         GenericUtils.SetListenerOnClick(resolution_pad, OnResolutionOut);
         GenericUtils.SetListenerOnClick(resolution_1080p, OnResolution1080p);
@@ -38,9 +54,45 @@ public class OptionWindow : MonoBehaviour
         GenericUtils.SetListenerOnClick(resolution_720p, OnResolution720p);
         GenericUtils.SetListenerOnClick(resolution_540p, OnResolution540p);
 
+        customResolution.HideResolutionIcon = HideResolutionIcon;
+        
+        GenericUtils.SetListenerOnClick(customResolutionPad, () => customResolution.gameObject.SetActive(true));
+        
         GenericUtils.SetListenerOnClick(language_zhcn, OnSelectLanguage);
         GenericUtils.SetListenerOnClick(language_jp, OnSelectLanguage);
         GenericUtils.SetListenerOnClick(language_enus, OnSelectLanguage);
+
+        intentbox_L_text.text = PlayerPrefs.GetInt("IntentBox_L", 0).ToString();
+
+        intentbox_L_text.onEndEdit.AddListener(value =>
+        {
+            if (!int.TryParse(value, out var intValue))
+            {
+                intValue = 0;
+            }
+
+            PlayerPrefs.SetInt("IntentBox_L", intValue);
+
+            EmueraContent.instance.SetIntentBox(intValue, PlayerPrefs.GetInt("IntentBox_R", 0));
+
+            intentbox_L_text.text = intValue.ToString();
+        });
+        
+        intentbox_R_text.text = PlayerPrefs.GetInt("IntentBox_R", 0).ToString();
+
+        intentbox_R_text.onEndEdit.AddListener(value =>
+        {
+            if (!int.TryParse(value, out var intValue))
+            {
+                intValue = 0;
+            }
+
+            PlayerPrefs.SetInt("IntentBox_R", intValue);
+
+            EmueraContent.instance.SetIntentBox(PlayerPrefs.GetInt("IntentBox_L", 0), intValue);
+
+            intentbox_R_text.text = intValue.ToString();
+        });
 
         GenericUtils.SetListenerOnClick(intentbox_L_left, OnIntentLLeft);
         GenericUtils.SetListenerOnClick(intentbox_L_right, OnIntentLRight);
@@ -49,28 +101,33 @@ public class OptionWindow : MonoBehaviour
         GenericUtils.SetListenerOnClick(intentbox_close, OnIntentClose);
         GenericUtils.SetListenerOnClick(intentbox_reset, OnIntentReset);
 
+        contentScale.IntentClose = OnIntentClose;
+
         HideResolutionIcon();
-        switch(ResolutionHelper.resolution_index)
+        switch (ResolutionHelper.resolution_index)
         {
-        case 2:
-            resolution_900p_icon.SetActive(true);
-            break;
-        case 3:
-            resolution_720p_icon.SetActive(true);
-            break;
-        case 4:
-            resolution_540p_icon.SetActive(true);
-            break;
-        case 1:
-        default:
-            resolution_1080p_icon.SetActive(true);
-            break;
+            case 2:
+                resolution_900p_icon.SetActive(true);
+                break;
+            case 3:
+                resolution_720p_icon.SetActive(true);
+                break;
+            case 4:
+                resolution_540p_icon.SetActive(true);
+                break;
+            case 100:
+                customResolution.SetIconActive(true);
+                break;
+            case 1:
+            default:
+                resolution_1080p_icon.SetActive(true);
+                break;
         }
     }
 
     void OnQuickButtonClick()
     {
-        if(quick_buttons.IsShow)
+        if (quick_buttons.IsShow)
         {
             quick_buttons.Hide();
             SwitchButton(-1);
@@ -86,9 +143,10 @@ public class OptionWindow : MonoBehaviour
             SwitchButton(0);
         }
     }
+
     void OnInputPadButtonClick()
     {
-        if(input_pad.IsShow)
+        if (input_pad.IsShow)
         {
             input_pad.Hide();
             SwitchButton(-1);
@@ -101,9 +159,10 @@ public class OptionWindow : MonoBehaviour
             SwitchButton(1);
         }
     }
+
     void OnScalePadButtonClick()
     {
-        if(scale_pad.IsShow)
+        if (scale_pad.IsShow)
         {
             scale_pad.Hide();
             SwitchButton(-1);
@@ -116,9 +175,10 @@ public class OptionWindow : MonoBehaviour
             SwitchButton(2);
         }
     }
+
     void OnLockOrientationClick()
     {
-        if(auto_rotation)
+        if (auto_rotation)
         {
             Screen.autorotateToLandscapeLeft = false;
             Screen.autorotateToLandscapeRight = false;
@@ -147,12 +207,13 @@ public class OptionWindow : MonoBehaviour
         menu_pad.SetActive(true);
         menu_2.SetActive(true);
     }
+
     void OnMenu2Back()
     {
-        if(EmueraThread.instance.Running())
+        if (EmueraThread.instance.Running())
         {
             ShowMessageBox(
-                MultiLanguage.GetText("[Wait]"), 
+                MultiLanguage.GetText("[Wait]"),
                 MultiLanguage.GetText("[WaitContent]"));
         }
         else
@@ -166,11 +227,13 @@ public class OptionWindow : MonoBehaviour
                     emuera.Clear();
                 }, () => { });
         }
+
         HideMenu();
     }
+
     void OnMenu2Restart()
     {
-        if(EmueraThread.instance.Running())
+        if (EmueraThread.instance.Running())
         {
             ShowMessageBox(
                 MultiLanguage.GetText("[Wait]"),
@@ -181,17 +244,19 @@ public class OptionWindow : MonoBehaviour
             ShowMessageBox(
                 MultiLanguage.GetText("[ReloadGame]"),
                 MultiLanguage.GetText("[ReloadGameContent]"),
-            () =>
-            {
-                var emuera = GameObject.FindObjectOfType<EmueraMain>();
-                emuera.Restart();
-            }, () => { });
+                () =>
+                {
+                    var emuera = GameObject.FindObjectOfType<EmueraMain>();
+                    emuera.Restart();
+                }, () => { });
         }
+
         HideMenu();
     }
+
     void OnMenuGotoTitle()
     {
-        if(EmueraThread.instance.Running())
+        if (EmueraThread.instance.Running())
         {
             ShowMessageBox(
                 MultiLanguage.GetText("[Wait]"),
@@ -202,13 +267,12 @@ public class OptionWindow : MonoBehaviour
             ShowMessageBox(
                 MultiLanguage.GetText("[BackTitle]"),
                 MultiLanguage.GetText("[BackTitleContent]"),
-            () =>
-            {
-                MinorShift.Emuera.GlobalStatic.Console.GotoTitle();
-            }, () => { });
+                () => { MinorShift.Emuera.GlobalStatic.Console.GotoTitle(); }, () => { });
         }
+
         HideMenu();
     }
+
     void OnMenuSaveLog()
     {
         var path = MinorShift.Emuera.Program.ExeDir;
@@ -217,23 +281,25 @@ public class OptionWindow : MonoBehaviour
         path = path + fname + ".log";
         bool result = MinorShift.Emuera.GlobalStatic.Console.OutputLog(path);
 
-        ShowMessageBox(MultiLanguage.GetText("[SaveLog]"), 
-            result ? string.Format("{1}：\n{0}", path, MultiLanguage.GetText("[SavePath]")) : MultiLanguage.GetText("[Failure]"));
+        ShowMessageBox(MultiLanguage.GetText("[SaveLog]"),
+            result
+                ? string.Format("{1}：\n{0}", path, MultiLanguage.GetText("[SavePath]"))
+                : MultiLanguage.GetText("[Failure]"));
         HideMenu();
     }
+
     void OnMenuResolution()
     {
         resolution_pad.SetActive(true);
         HideMenu();
     }
+
     void OnMenuExit()
     {
         ShowMessageBox(
             MultiLanguage.GetText("[Exit]"),
-            MultiLanguage.GetText("[ExitContent]"), 
-            ()=> {
-                Application.Quit();
-            }, ()=> { });
+            MultiLanguage.GetText("[ExitContent]"),
+            () => { Application.Quit(); }, () => { });
         HideMenu();
     }
 
@@ -285,13 +351,15 @@ public class OptionWindow : MonoBehaviour
         resolution_900p_icon.SetActive(false);
         resolution_720p_icon.SetActive(false);
         resolution_540p_icon.SetActive(false);
+        
+        customResolution.SetIconActive(false);
     }
 
     public void Ready()
     {
         var texts = inprogress.GetComponentsInChildren<Text>();
         var length = texts.Length;
-        for(int i=0; i<length; ++i)
+        for (int i = 0; i < length; ++i)
         {
             var text = texts[i];
             text.color = EmueraBehaviour.FontColor;
@@ -305,7 +373,7 @@ public class OptionWindow : MonoBehaviour
         option_button.GetComponent<Image>().color = buttoncolor;
         orientation_lock_image.color = buttoncolor;
         scale_pad.SetColor(buttoncolor);
-        input_pad.SetColor(buttoncolor, 
+        input_pad.SetColor(buttoncolor,
             GenericUtils.ToUnityColor(MinorShift.Emuera.Config.BackColor));
 
         buttoncolor.a = 1.0f;
@@ -327,7 +395,7 @@ public class OptionWindow : MonoBehaviour
     public void ShowGameButton(bool value)
     {
         game_button.SetActive(value);
-        if(auto_rotation)
+        if (auto_rotation)
             orientation_lock_image.sprite = unlock_sprite;
         else
             orientation_lock_image.sprite = lock_sprite;
@@ -340,7 +408,7 @@ public class OptionWindow : MonoBehaviour
 
     void SwitchButton(int index)
     {
-        for(int i=0; i < button_shadows.Count; ++i)
+        for (int i = 0; i < button_shadows.Count; ++i)
         {
             var shadow = button_shadows[i];
             shadow.enabled = (i == index);
@@ -365,6 +433,7 @@ public class OptionWindow : MonoBehaviour
         msg_content.text = content;
         msg_box.SetActive(true);
     }
+
     void HideMessageBox()
     {
         msg_title.text = "";
@@ -373,15 +442,17 @@ public class OptionWindow : MonoBehaviour
         msg_cancel_callback = null;
         msg_box.SetActive(false);
     }
+
     void OnMsgConfirm()
     {
-        if(msg_confirm_callback != null)
+        if (msg_confirm_callback != null)
             msg_confirm_callback();
         HideMessageBox();
     }
+
     void OnMsgCancel()
     {
-        if(msg_cancel_callback != null)
+        if (msg_cancel_callback != null)
             msg_cancel_callback();
         HideMessageBox();
     }
@@ -391,6 +462,7 @@ public class OptionWindow : MonoBehaviour
         HideMenu();
         language_box.SetActive(true);
     }
+
     void OnSelectLanguage(UnityEngine.EventSystems.PointerEventData e)
     {
         MultiLanguage.SetLanguage(e.pointerPress.name);
@@ -407,58 +479,64 @@ public class OptionWindow : MonoBehaviour
         intentbox.SetActive(true);
         HideMenu();
     }
+
     void OnIntentLLeft()
     {
         int value = PlayerPrefs.GetInt("IntentBox_L", 0);
         value -= 1;
-        if(value < 0)
+        if (value < 0)
             value = 0;
         PlayerPrefs.SetInt("IntentBox_L", value);
         intentbox_L_text.text = value.ToString();
 
         EmueraContent.instance.SetIntentBox(PlayerPrefs.GetInt("IntentBox_L", 0),
-                                            PlayerPrefs.GetInt("IntentBox_R", 0));
+            PlayerPrefs.GetInt("IntentBox_R", 0));
     }
+
     void OnIntentLRight()
     {
         int value = PlayerPrefs.GetInt("IntentBox_L", 0);
         value += 1;
-        if(value > 99)
-            value = 99;
+        /*if (value > 99)
+            value = 99;*/
         PlayerPrefs.SetInt("IntentBox_L", value);
         intentbox_L_text.text = value.ToString();
 
         EmueraContent.instance.SetIntentBox(PlayerPrefs.GetInt("IntentBox_L", 0),
-                                            PlayerPrefs.GetInt("IntentBox_R", 0));
+            PlayerPrefs.GetInt("IntentBox_R", 0));
     }
+
     void OnIntentRLeft()
     {
         int value = PlayerPrefs.GetInt("IntentBox_R", 0);
         value += 1;
-        if(value > 99)
-            value = 99;
+        /*if (value > 99)
+            value = 99;*/
         PlayerPrefs.SetInt("IntentBox_R", value);
         intentbox_R_text.text = value.ToString();
 
         EmueraContent.instance.SetIntentBox(PlayerPrefs.GetInt("IntentBox_L", 0),
-                                            PlayerPrefs.GetInt("IntentBox_R", 0));
+            PlayerPrefs.GetInt("IntentBox_R", 0));
     }
+
     void OnIntentRRight()
     {
         int value = PlayerPrefs.GetInt("IntentBox_R", 0);
         value -= 1;
-        if(value < 0)
+        if (value < 0)
             value = 0;
         PlayerPrefs.SetInt("IntentBox_R", value);
         intentbox_R_text.text = value.ToString();
 
         EmueraContent.instance.SetIntentBox(PlayerPrefs.GetInt("IntentBox_L", 0),
-                                            PlayerPrefs.GetInt("IntentBox_R", 0));
+            PlayerPrefs.GetInt("IntentBox_R", 0));
     }
+
     void OnIntentClose()
     {
         intentbox.SetActive(false);
     }
+
     void OnIntentReset()
     {
         PlayerPrefs.SetInt("IntentBox_L", 0);
@@ -531,17 +609,17 @@ public class OptionWindow : MonoBehaviour
     public GameObject intentbox_R_right;
     public GameObject intentbox_close;
     public GameObject intentbox_reset;
-    public Text intentbox_L_text;
-    public Text intentbox_R_text;
+    public InputField intentbox_L_text;
+    public InputField intentbox_R_text;
 
     bool auto_rotation
     {
         get
         {
             return Screen.autorotateToLandscapeLeft &&
-                    Screen.autorotateToLandscapeRight &&
-                    Screen.autorotateToPortrait &&
-                    Screen.autorotateToPortraitUpsideDown;
+                   Screen.autorotateToLandscapeRight &&
+                   Screen.autorotateToPortrait &&
+                   Screen.autorotateToPortraitUpsideDown;
         }
     }
 }

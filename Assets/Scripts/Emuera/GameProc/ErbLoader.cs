@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 //using Microsoft.VisualBasic;
 using MinorShift.Emuera.Sub;
 using MinorShift.Emuera.GameView;
@@ -51,6 +52,11 @@ namespace MinorShift.Emuera.GameProc
 			try
 			{
 				labelDic.RemoveAll();
+				
+				var lockObject = new object();
+				var manualReset = new ManualResetEvent(false);
+				var loadCount = 0;
+				
 				for (int i = 0; i < erbFiles.Count; i++)
 				{
 					string filename = erbFiles[i].Key;
@@ -63,8 +69,30 @@ namespace MinorShift.Emuera.GameProc
 						output.PrintSystemLine(filename + "読み込み中・・・");
 #endif
 					//System.Windows.Forms.//Application.DoEvents();
-					loadErb(file, filename, isOnlyEvent);
+					
+					ThreadPool.QueueUserWorkItem(_ =>
+					{
+						loadErb(file, filename, isOnlyEvent);
+						
+						lock (lockObject)
+						{
+							loadCount++;
+							manualReset.Set();
+						}
+					});
 				}
+
+				while (true)
+				{
+					manualReset.WaitOne();
+					
+					lock (lockObject)
+					{
+						if (loadCount == erbFiles.Count)
+							break;
+					}
+				}
+				
 				ParserMediator.FlushWarningList();
 #if UEMUERA_DEBUG
 				output.PrintSystemLine("経過時間:" + (WinmmTimer.TickCount - starttime).ToString("D4") + "ms:");
@@ -115,6 +143,11 @@ namespace MinorShift.Emuera.GameProc
             noError = true;
 			labelDic = labelDictionary;
 			labelDic.Initialized = false;
+			
+			var lockObject = new object();
+			var manualReset = new ManualResetEvent(false);
+			var loadCount = 0;
+			
 			foreach (string fpath in path)
 			{
 				if (fpath.StartsWith(Program.ErbDir, Config.SCIgnoreCase) && !Program.AnalysisMode)
@@ -124,8 +157,30 @@ namespace MinorShift.Emuera.GameProc
 				if (Program.AnalysisMode)
 					output.PrintSystemLine(fname + "読み込み中・・・");
 				//System.Windows.Forms.//Application.DoEvents();
-                loadErb(fpath, fname, isOnlyEvent);
+				
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+	                loadErb(fpath, fname, isOnlyEvent);
+						
+	                lock (lockObject)
+	                {
+		                loadCount++;
+		                manualReset.Set();
+	                }
+                });
 			}
+			
+			while (true)
+			{
+				manualReset.WaitOne();
+					
+				lock (lockObject)
+				{
+					if (loadCount == path.Count)
+						break;
+				}
+			}
+			
             if (Program.AnalysisMode)
                 output.NewLine();
             ParserMediator.FlushWarningList();
