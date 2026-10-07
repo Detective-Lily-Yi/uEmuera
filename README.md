@@ -3,8 +3,14 @@ uEmuera
 
 <img src="Assets/splash/icon.png" width="256"/>
 
-**Android10 特别说明：**
-**如果放入sdcard/uEmuera下无法找到的话，可以放入sdcard/Android/data/xerysherry.uEmuera/files/下**
+此分支修改自 [Fegelein21/uEmuera](https://github.com/Fegelein21/uEmuera) 分支，并同步 [xerysherry/uEmuera](https://github.com/xerysherry/uEmuera) 主分支的最新提交
+
+修复了新版本游戏在uEmuera模拟器中无法显示立绘及图片的问题
+
+非常感谢 [xerysherry](https://github.com/xerysherry) 编写了uEmuera模拟器及 [Fegelein21](https://github.com/Fegelein21) 为Emuera模拟器作出的贡献
+
+简介
+----
 
 Emuera是Emulator of Eramaker的缩写，是Windows平台下文字游戏平台。
 
@@ -17,28 +23,28 @@ Emuera是Emulator of Eramaker的缩写，是Windows平台下文字游戏平台�
 下载
 ----
 
-[https://github.com/xerysherry/uEmuera/releases](https://github.com/xerysherry/uEmuera/releases)
+[https://github.com/Detective-Lily-Yi/uEmuera/releases](https://github.com/Detective-Lily-Yi/uEmuera/releases)
+
+源项目地址
+----
+[https://github.com/xerysherry/uEmuera](https://github.com/xerysherry/uEmuera)
+
+[https://github.com/Fegelein21/uEmuera](https://github.com/Fegelein21/uEmuera)
 
 如何使用：
---------
+----------
 
 1. 请确保era相关文件编码为UTF8，包括\*.csv, \*.ERB, \*.ERH。
-
 2. 请在初次运行app时，选择允许“文件访问”的权限。
-
 3. 请把处理完毕的era脚本文件夹放置在sdcard下的emuera文件夹内。完整路径为storage/emulated/0/emuera, storage/emulated/1/emuera, storage/emulated/2/emuera
 
 已知问题/需要改进项：
--------------------
+---------------------
 
 1. 无法在app内修改era游戏配置
-
 2. 无调试功能
-
 3. 部分游戏的某些指令效率较低，导致卡顿
-
 4. 可能会比较耗电（Unity3D程序通病）
-
 5. ...
 
 截图
